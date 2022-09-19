@@ -97,3 +97,37 @@ resource "google_compute_firewall" "default_ssh" {
   source_ranges = [ "0.0.0.0/0" ]
   target_tags = [ "allow-ssh" ]
 }
+
+resource "google_compute_backend_service" "backend1" {
+  name          = "default"
+  backend {
+    group = google_compute_region_instance_group_manager.default.instance_group
+  }
+  health_checks = [google_compute_health_check.mig_helth_check.self_link]
+
+  protocol      = "HTTP"
+  timeout_sec   = 10
+  port_name     = "http"
+}
+
+resource "google_compute_url_map" "default" {
+  name            = "default"
+  default_service = google_compute_backend_service.backend1.self_link
+}
+
+resource "google_compute_target_http_proxy" "default" {
+  name        = "default"
+  url_map     = google_compute_url_map.default.self_link
+  ssl_certificates = [google_compute_managed_ssl_certificate.example.self_link]
+}
+
+resource "google_compute_ssl_certificate" "example" {
+  name        = "example"
+  private_key = tls_private_key.example.private_key_pem
+  certificate = tls_self_signed_cert.example.cert_pem
+}
+
+resource "tls_private_key" "example" {
+  algorithm = "RSA"
+  rsa_bits  = 2048
+}
