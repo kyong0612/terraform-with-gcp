@@ -2,6 +2,14 @@
 resource "google_compute_instance_template" "default" {
   name         = "default"
   machine_type = "f1-micro"
+  region = var.gcp_region
+
+  metadata_startup_script = file("./gceme.sh.tpl")
+
+  tags = [ "allow-ssh","allow-service" ]
+  labels = {
+    "key" = "value"
+  }
 
   disk {
     source_image = "debian-cloud/debian-11"
@@ -12,15 +20,39 @@ resource "google_compute_instance_template" "default" {
   }
 }
 
+resource "google_compute_router" "default" {
+  name = "default"
+  region = var.gcp_region
+  network = "default"
+}
+
+resource "google_compute_router_nat" "default" {
+  name = "default"
+  router = google_compute_router.default.name
+  region = google_compute_router.default.region
+  # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_router_nat#source_subnetwork_ip_ran› ›ges_to_nat
+  source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES" 
+  # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_router_nat#nat_ip_allocate_option
+  nat_ip_allocate_option = "AUTO_ONLY"
+}
+
 resource "google_compute_region_instance_group_manager" "default" {
   name   = "default"
-  region = "asia-northeast1"
+  region = var.gcp_region
   version {
     instance_template = google_compute_instance_template.default.self_link
   }
 
   base_instance_name = "mig"
-  target_size        = 6
+  target_size        = null
+
+  auto_healing_policies {
+    health_check      = google_compute_health_check.default.self_link
+    initial_delay_sec = 30
+  }
+  timeouts {
+    create = "15m"
+  }
 }
 
 resource "google_compute_region_autoscaler" "default" {
