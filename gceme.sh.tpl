@@ -77,4 +77,4 @@ sudo mv /var/www/html/index.html /var/www/html/index.html.old
 systemctl enable apache2
 systemctl restart apache2
 
-echo "test"
+echo "pr-test"
