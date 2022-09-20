@@ -72,7 +72,9 @@ function metadata_value($value) {
 EOF
 sudo mv /var/www/html/index.html /var/www/html/index.html.old
 
-[[ -n "${PROXY_PATH}" ]] && mkdir -p /var/www/html/${PROXY_PATH} && cp /var/www/html/index.php /var/www/html/${PROXY_PATH}/index.php
+[[ -n "${PROXY_PATH}" ]] && mkdir -p /var/www/html/"${PROXY_PATH}" && cp /var/www/html/index.php /var/www/html/"${PROXY_PATH}"/index.php
 
 systemctl enable apache2
 systemctl restart apache2
+
+echo "test"
